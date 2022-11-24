@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom styles for this template -->
+    <link href="css/scrolling-nav.css" rel="stylesheet" />
+    <link href="css/styles.css" rel="stylesheet" />
+  </head>
+  <body id="page-top">
+    <video controls loop autoplay id="continuous_video_player" >
+      <source src="hfs_fancy_nosound.mp4" type="video/mp4" />
+    </video>
+    <!-- <video controls loop id="event_video_player">
+      <source src="" type="video/mp4">
+    </video> -->
+    <!-- <span id="video status">Videos are not available </span> -->
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Plugin JavaScript -->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+    <!-- Custom JavaScript for this theme -->
+    <script src="js/scrolling-nav.js"></script>
+    <script src='/socket.io/socket.io.js'></script>
+    <script>
+        var socket = io();
+        var running_component_id = "";
+        var recieve_actions =true;
+        var maintenance =false;
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+        function get_not_running_video_component (running_component_id) {
+          if(running_component_id == "continuous_video_player")
+            return "event_video_player"
+          return "continuous_video_player"
+        }
+
+        socket.on('change_video', async function(video_name){
+          if(recieve_actions == true){
+          recieve_actions = false;
+          var new_running_component_id = get_not_running_video_component(running_component_id);
+          var old_video_component = document.getElementById(running_component_id)
+          var new_video_component = document.getElementById(new_running_component_id);
+          new_video_component.src = "videos/" + video_name;
+          new_video_component.play();
+          await sleep(400);
+          new_video_component.style.visibility = "visible";
+          old_video_component.style.visibility = "hidden";
+          old_video_component.pause();
+          // await sleep(new_video_component.duration  * 1000);
+          await sleep((12) * 1000);
+          if (maintenance != true){
+          old_video_component.play();
+          await sleep(400);
+          new_video_component.style.visibility = "hidden";
+          old_video_component.style.visibility = "visible";
+          new_video_component.pause();
+          recieve_actions = true;
+        }
+          }
+        });
+
+        socket.on('start_video', async function( video_name, is_maintenance){
+          if(is_maintenance == "true"){
+          recieve_actions = false;
+          maintenance =true;
+        }
+        else{
+          recieve_actions = true;
+          maintenance =false;
+        }
+          if(running_component_id == ""){
+            document.getElementById("continuous_video_player").src="videos/"+video_name;
+          running_component_id = "continuous_video_player"
+        }
+        else{
+          var new_running_component_id = get_not_running_video_component(running_component_id);
+          var old_video_component = document.getElementById(running_component_id)
+          var new_video_component = document.getElementById(new_running_component_id);
+          new_video_component.src = "videos/" + video_name;
+          new_video_component.play();
+          await sleep(400);
+          new_video_component.style.visibility = "visible";
+          old_video_component.style.visibility = "hidden";
+          old_video_component.pause();
+          running_component_id =  new_running_component_id ;
+
+        }
+        });
+
+        socket.on('play_video', function(video_component_id){
+          document.getElementById(video_component_id).play();
+          running_component_id = video_component_id
+        });
+
+        socket.on('pause_video', function(video_component_id){
+          document.getElementById(video_component_id).pause();
+        });
+    </script>
+  </body>
+</html>
